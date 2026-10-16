@@ -1,0 +1,36 @@
+name: Test ECLint default args (check)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a compliant JS file for default check
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/default"
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/default/.editorconfig" <<'EOF'
+          root = true
+
+          [*.js]
+          charset = utf-8
+          end_of_line = lf
+          indent_size = 2
+          indent_style = space
+          insert_final_newline = true
+          trim_trailing_whitespace = true
+          EOF
+          # Write a compliant JS file
+          printf 'var x = 1;\n' > "$GITHUB_WORKSPACE/tests/fixtures/default/sample.js"
+
+      - id: action
+        uses: .
+        with:
+          # Use default 'check' arg but explicitly target our compliant fixture file
+          args: check ${{ github.workspace }}/tests/fixtures/default/sample.js
+
+      - name: Assert default check passed
+        run: |
+          echo "ECLint ran with default check args successfully"
+          echo "PASS"

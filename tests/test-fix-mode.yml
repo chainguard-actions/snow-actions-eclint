@@ -1,0 +1,42 @@
+name: Test ECLint fix mode
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a JS file with trailing whitespace to be fixed
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/fix"
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/fix/.editorconfig" <<'EOF'
+          root = true
+
+          [*.js]
+          charset = utf-8
+          end_of_line = lf
+          indent_size = 2
+          indent_style = space
+          insert_final_newline = true
+          trim_trailing_whitespace = true
+          EOF
+          # Write a file with trailing whitespace (violates trim_trailing_whitespace)
+          printf 'function hello() {   \n  return "world";\n}\n' > "$GITHUB_WORKSPACE/tests/fixtures/fix/fixme.js"
+
+      - id: action
+        uses: .
+        with:
+          args: fix ${{ github.workspace }}/tests/fixtures/fix/fixme.js
+
+      - name: Assert file was fixed (no trailing whitespace)
+        run: |
+          FILE="$GITHUB_WORKSPACE/tests/fixtures/fix/fixme.js"
+          echo "File contents after fix:"
+          cat -A "$FILE"
+          # Check that no line has trailing whitespace (spaces/tabs before newline)
+          if grep -P '\s+$' "$FILE"; then
+            echo "FAIL: file still has trailing whitespace after fix"
+            exit 1
+          fi
+          echo "PASS: trailing whitespace was removed by eclint fix"

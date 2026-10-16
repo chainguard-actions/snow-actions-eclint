@@ -1,0 +1,14 @@
+name: 'ECLint'
+description: 'Validate or fix code based on EditorConfig by using ECLint.'
+inputs:
+  args:
+    description: 'arguments'
+    required: true
+    default: 'check'
+runs:
+  pre: chainguard-phonehome.js
+  using: 'node12'
+  main: 'index.js'
+branding:
+  icon: 'check-square'
+  color: 'green'

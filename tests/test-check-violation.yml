@@ -1,0 +1,46 @@
+name: Test ECLint check with violations
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a non-compliant JS file (trailing whitespace)
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/violation"
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/violation/.editorconfig" <<'EOF'
+          root = true
+
+          [*.js]
+          charset = utf-8
+          end_of_line = lf
+          indent_size = 2
+          indent_style = space
+          insert_final_newline = true
+          trim_trailing_whitespace = true
+          EOF
+          # Write a non-compliant JS file: trailing whitespace on line 1
+          printf 'function hello() {   \n  return "world";\n}\n' > "$GITHUB_WORKSPACE/tests/fixtures/violation/bad.js"
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          args: check ${{ github.workspace }}/tests/fixtures/violation/bad.js
+
+      - name: Assert action failed due to violation
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action correctly detected EditorConfig violation"
+          elif [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: action should have failed on non-compliant file"
+            exit 1
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

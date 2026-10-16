@@ -1,0 +1,35 @@
+name: Test ECLint basic check (compliant files)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a compliant JS file and editorconfig for testing
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/compliant"
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/compliant/.editorconfig" <<'EOF'
+          root = true
+
+          [*.js]
+          charset = utf-8
+          end_of_line = lf
+          indent_size = 2
+          indent_style = space
+          insert_final_newline = true
+          trim_trailing_whitespace = true
+          EOF
+          # Write a compliant JS file (LF endings, 2-space indent, final newline, no trailing whitespace)
+          printf 'function hello() {\n  return "world";\n}\n' > "$GITHUB_WORKSPACE/tests/fixtures/compliant/hello.js"
+
+      - id: action
+        uses: .
+        with:
+          args: check ${{ github.workspace }}/tests/fixtures/compliant/hello.js
+
+      - name: Assert action succeeded
+        run: |
+          echo "ECLint check passed on compliant file"
+          echo "PASS"
