@@ -1,9 +1,10 @@
 {
-  "status": "bundled",
+  "status": "unbundlable",
   "entries": [
     {
       "path": "index.js",
-      "status": "bundled"
+      "status": "unbundlable",
+      "reason": "runs a node_modules file by path, which bundling cannot inline: node_modules/eclint/bin/eclint.js"
     }
   ]
 }
